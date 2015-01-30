@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <zlib.h>
 #include <regex.h>
@@ -79,7 +80,7 @@ int set_loglevel(int level, char *filename)
    /* all the host type will be unknown, warn the user */
    if (GBL_OPTIONS->read) {
       USER_MSG("*********************************************************\n");
-      USER_MSG("WARNING: while reading form file we cannot determine    \n");
+      USER_MSG("WARNING: while reading form file we cannot determine     \n");
       USER_MSG("if an host is local or not because the ip address of     \n");
       USER_MSG("the NIC may have been changed from the time of the dump. \n");
       USER_MSG("*********************************************************\n\n");
@@ -203,6 +204,78 @@ void log_close(struct log_fd *fd)
       close(fd->fd);
       fd->fd = 0;
    }
+}
+
+/*
+ * change the owner:group of the packet log file and info log file
+ * to EUID:EGID of the current process
+ */
+void drop_log_owner(void)
+{
+   uid_t ruid = getuid();
+   gid_t rgid = getgid();
+   uid_t euid = geteuid();
+   gid_t egid = getegid();
+
+   if ( (ruid == euid) && (rgid == egid) )  return;
+  
+   struct stat f;
+
+   /* packet log file */
+   if (fdp.fd > 0)
+   {
+      DEBUG_MSG("drop_log_owner: packet log file");
+      if (fstat(fdp.fd, &f) == 0)
+      {
+         /* skip if the file owner has somehow changed from ruid of the process
+          * since the file creation
+          */
+         if ( (f.st_uid == ruid) && (ruid != euid) )
+         {
+            if ( fchown(fdp.fd, euid, -1) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      
+         /* skip if the file group has changed from rgid of the process
+          * since the file creation (e.g. upon creation in the set-group-ID directory)
+          */
+         if ( (f.st_gid == rgid) && (rgid != egid) )
+         {
+            if ( fchown(fdp.fd, -1, egid) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      }
+      else
+         ERROR_MSG("fstat()");
+   };
+
+   /* info log file */
+   if (fdi.fd > 0)
+   {
+      DEBUG_MSG("drop_log_owner: info log file");
+      if (fstat(fdi.fd, &f) == 0)
+      {
+         /* skip if the file owner has somehow changed from ruid of the process
+          * since the file creation
+          */
+         if ( (f.st_uid == ruid) && (ruid != euid) )
+         {
+            if ( fchown(fdi.fd, euid, -1) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      
+         /* skip if the file group has changed from rgid of the process
+          * since the file creation (e.g. upon creation in the set-group-ID directory)
+          */
+         if ( (f.st_gid == rgid) && (rgid != egid) )
+         {
+            if ( fchown(fdi.fd, -1, egid) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      }
+      else
+         ERROR_MSG("fstat()");
+   };
 }
 
 /* 
