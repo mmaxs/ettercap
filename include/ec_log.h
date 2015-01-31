@@ -8,6 +8,7 @@
 
 #include <zlib.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 
 struct log_fd {
@@ -126,7 +127,7 @@ EC_API_EXTERN int set_msg_loglevel(int level, char *filename);
 #define LOG_TRUE     1
 #define LOG_FALSE    0
 
-EC_API_EXTERN void drop_log_owner(void);
+EC_API_EXTERN void set_log_owner(uid_t, gid_t);
 
 EC_API_EXTERN int log_open(struct log_fd *fd, char *filename);
 EC_API_EXTERN void log_close(struct log_fd *fd);

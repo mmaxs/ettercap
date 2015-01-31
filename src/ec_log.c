@@ -207,41 +207,26 @@ void log_close(struct log_fd *fd)
 }
 
 /*
- * change the owner:group of the packet log file and info log file
- * to EUID:EGID of the current process
+ * set the owner:group of the packet log file and info log file
  */
-void drop_log_owner(void)
+void set_log_owner(uid_t uid, gid_t gid)
 {
-   uid_t ruid = getuid();
-   gid_t rgid = getgid();
-   uid_t euid = geteuid();
-   gid_t egid = getegid();
-
-   if ( (ruid == euid) && (rgid == egid) )  return;
-  
    struct stat f;
 
    /* packet log file */
    if (fdp.fd > 0)
    {
-      DEBUG_MSG("drop_log_owner: packet log file");
+      DEBUG_MSG("set_log_owner: packet log file");
       if (fstat(fdp.fd, &f) == 0)
       {
-         /* skip if the file owner has somehow changed from ruid of the process
-          * since the file creation
-          */
-         if ( (f.st_uid == ruid) && (ruid != euid) )
+         if (f.st_uid != uid)
          {
-            if ( fchown(fdp.fd, euid, -1) != 0 )
+            if ( fchown(fdp.fd, uid, -1) != 0 )
                ERROR_MSG("fchown()");
          };
-      
-         /* skip if the file group has changed from rgid of the process
-          * since the file creation (e.g. upon creation in the set-group-ID directory)
-          */
-         if ( (f.st_gid == rgid) && (rgid != egid) )
+         if (f.st_gid != gid)
          {
-            if ( fchown(fdp.fd, -1, egid) != 0 )
+            if ( fchown(fdp.fd, -1, gid) != 0 )
                ERROR_MSG("fchown()");
          };
       }
@@ -252,24 +237,17 @@ void drop_log_owner(void)
    /* info log file */
    if (fdi.fd > 0)
    {
-      DEBUG_MSG("drop_log_owner: info log file");
+      DEBUG_MSG("set_log_owner: info log file");
       if (fstat(fdi.fd, &f) == 0)
       {
-         /* skip if the file owner has somehow changed from ruid of the process
-          * since the file creation
-          */
-         if ( (f.st_uid == ruid) && (ruid != euid) )
+         if (f.st_uid != uid)
          {
-            if ( fchown(fdi.fd, euid, -1) != 0 )
+            if ( fchown(fdi.fd, uid, -1) != 0 )
                ERROR_MSG("fchown()");
          };
-      
-         /* skip if the file group has changed from rgid of the process
-          * since the file creation (e.g. upon creation in the set-group-ID directory)
-          */
-         if ( (f.st_gid == rgid) && (rgid != egid) )
+         if (f.st_gid != gid)
          {
-            if ( fchown(fdi.fd, -1, egid) != 0 )
+            if ( fchown(fdi.fd, -1, gid) != 0 )
                ERROR_MSG("fchown()");
          };
       }

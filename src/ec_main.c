@@ -151,9 +151,6 @@ int main(int argc, char *argv[])
 
 /***** !! NO PRIVS AFTER THIS POINT !! *****/
 
-   /* adjust opened files to current EUID:EGID */
-   drop_log_owner();
-
    /* load all the plugins */
    plugin_load_all();
 
