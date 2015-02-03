@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <zlib.h>
 #include <regex.h>
@@ -79,7 +80,7 @@ int set_loglevel(int level, char *filename)
    /* all the host type will be unknown, warn the user */
    if (GBL_OPTIONS->read) {
       USER_MSG("*********************************************************\n");
-      USER_MSG("WARNING: while reading form file we cannot determine    \n");
+      USER_MSG("WARNING: while reading form file we cannot determine     \n");
       USER_MSG("if an host is local or not because the ip address of     \n");
       USER_MSG("the NIC may have been changed from the time of the dump. \n");
       USER_MSG("*********************************************************\n\n");
@@ -203,6 +204,56 @@ void log_close(struct log_fd *fd)
       close(fd->fd);
       fd->fd = 0;
    }
+}
+
+/*
+ * set the owner:group of the packet and info logfiles
+ */
+void set_logfile_owners(uid_t uid, gid_t gid)
+{
+   struct stat f;
+
+   /* packet logfile */
+   if (fdp.fd > 0)
+   {
+      DEBUG_MSG("set_logfile_owners: packet log file");
+      if (fstat(fdp.fd, &f) == 0)
+      {
+         if (f.st_uid != uid)
+         {
+            if ( fchown(fdp.fd, uid, -1) != 0 )
+               ERROR_MSG("fchown()");
+         };
+         if (f.st_gid != gid)
+         {
+            if ( fchown(fdp.fd, -1, gid) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      }
+      else
+         ERROR_MSG("fstat()");
+   };
+
+   /* info logfile */
+   if (fdi.fd > 0)
+   {
+      DEBUG_MSG("set_logfile_owners: info log file");
+      if (fstat(fdi.fd, &f) == 0)
+      {
+         if (f.st_uid != uid)
+         {
+            if ( fchown(fdi.fd, uid, -1) != 0 )
+               ERROR_MSG("fchown()");
+         };
+         if (f.st_gid != gid)
+         {
+            if ( fchown(fdi.fd, -1, gid) != 0 )
+               ERROR_MSG("fchown()");
+         };
+      }
+      else
+         ERROR_MSG("fstat()");
+   };
 }
 
 /* 
