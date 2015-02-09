@@ -126,7 +126,7 @@ if(NOT DISABLE_RPATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif(NOT DISABLE_RPATH)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb3 -DDEBUG -Wall -Wno-pointer-sign -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security -Wextra -Wredundant-decls" CACHE STRING "" FORCE)
-set(CMAKE_C_FLAGS_RELEASE "-O2 -w -D_FORTIFY_SOURCE=2" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -Wall -Wextra -Wformat-security -Wredundant-decls  -Wno-pointer-sign -Wno-unused-result -Wno-empty-body -Wno-unused-variable -Wno-unused-parameter  -Werror" CACHE STRING "" FORCE)
 
 if(OS_DARWIN)
 set(CMAKE_EXE_LINKER_FLAGS "-Wl" CACHE STRING "" FORCE)
